@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { lightTheme } from '../../theme';
+import { darkTheme } from '../../theme';
 import BoardPanel from '../../components/BoardPanel';
 
 export default function HomeScreen({ mode = 'Trending' }) {
@@ -18,7 +18,7 @@ export default function HomeScreen({ mode = 'Trending' }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'stretch', justifyContent: 'center', paddingHorizontal: 0, paddingVertical: 0, backgroundColor: lightTheme.colors.background },
+  container: { flex: 1, alignItems: 'stretch', justifyContent: 'center', paddingHorizontal: 0, paddingVertical: 0, backgroundColor: darkTheme.colors.background },
   title: { fontSize: 24, fontWeight: '600' },
   subtitle: { marginTop: 8 },
   boardWrap: { },

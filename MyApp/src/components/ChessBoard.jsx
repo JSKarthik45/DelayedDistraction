@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { lightTheme } from '../theme';
+import { darkTheme } from '../theme';
 // Logic library (install: npm install chess.js)
 // We guard import to avoid runtime crash if not installed yet.
 let ChessLib;
@@ -27,12 +27,12 @@ const iconNameFromType = {
 
 export default function ChessBoard({ fen = 'start', size = 320, borderRadius = 0 }) {
   const squareSize = size / 8;
-  const dark = lightTheme.colors.primary;
-  const light = lightTheme.colors.secondary;
+  const dark = darkTheme.colors.primary;
+  const light = darkTheme.colors.secondary;
   const pieceColorWhite = '#F5F7FA';
   const pieceColorBlack = '#1E1E1E';
-  const highlightColor = lightTheme.colors.success || '#4caf50';
-  const moveDotColor = lightTheme.colors.muted;
+  const highlightColor = darkTheme.colors.success || '#4caf50';
+  const moveDotColor = darkTheme.colors.muted;
 
   const [game] = useState(() => {
     if (!ChessLib) return null;
@@ -125,7 +125,7 @@ export default function ChessBoard({ fen = 'start', size = 320, borderRadius = 0
     const squareAlg = algebraicFromRC(r, c);
     const isSelected = selected && selected.square === squareAlg;
     const isLegal = legalTargets.includes(squareAlg);
-    const iconSize = squareSize * 0.64;
+    const iconSize = squareSize * 0.70;
     return (
       <>
         {sq ? (
@@ -134,6 +134,11 @@ export default function ChessBoard({ fen = 'start', size = 320, borderRadius = 0
             size={iconSize}
             color={sq[0] === 'w' ? pieceColorWhite : pieceColorBlack}
             solid
+            style={{
+              textShadowColor: '#000000ff', 
+              textShadowOffset: { width: 1, height: 1 },
+              textShadowRadius: 2,
+            }}
           />
         ) : null}
         {isLegal && (
@@ -147,7 +152,7 @@ export default function ChessBoard({ fen = 'start', size = 320, borderRadius = 0
   };
 
   return (
-    <View style={{ width: size, height: size, borderRadius, overflow: 'hidden', backgroundColor: lightTheme.colors.surface, borderWidth: 2, borderColor: lightTheme.colors.border }}>
+    <View style={{ width: size, height: size, borderRadius, overflow: 'hidden', backgroundColor: darkTheme.colors.surface, borderWidth: 2, borderColor: darkTheme.colors.border }}>
       {boardData.map((rank, r) => (
         <View key={`r-${r}`} style={{ flexDirection: 'row' }}>
           {rank.map((sq, c) => {

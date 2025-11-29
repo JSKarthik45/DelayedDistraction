@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Switch, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { lightTheme } from '../theme';
+import { darkTheme } from '../theme';
 
 export const SOCIAL_APPS = [
   { key: 'instagram', label: 'Instagram', icon: 'logo-instagram' },
@@ -23,14 +23,14 @@ export default function SettingsQuickSetup({ blocked, setBlocked, problemTarget,
         return (
           <View key={item.key} style={styles.row}>
             <View style={styles.rowLeft}>
-              <Ionicons name={item.icon} size={24} color={lightTheme.colors.text} />
+              <Ionicons name={item.icon} size={24} color={darkTheme.colors.text} />
               <Text style={styles.rowLabel}>{item.label}</Text>
             </View>
             <Switch
               value={isOn}
               onValueChange={() => toggleApp(item.key)}
-              trackColor={{ false: lightTheme.colors.border, true: lightTheme.colors.primary }}
-              thumbColor={isOn ? lightTheme.colors.text : '#f4f3f4'}
+              trackColor={{ false: darkTheme.colors.border, true: darkTheme.colors.primary }}
+              thumbColor={isOn ? darkTheme.colors.text : '#f4f3f4'}
             />
           </View>
         );
@@ -53,29 +53,29 @@ export default function SettingsQuickSetup({ blocked, setBlocked, problemTarget,
 }
 
 const styles = StyleSheet.create({
-  sectionTitle: { fontSize: 18, fontWeight: '700', marginBottom: 8, color: lightTheme.colors.text },
+  sectionTitle: { fontSize: 18, fontWeight: '700', marginBottom: 8, color: darkTheme.colors.text },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 2,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: lightTheme.colors.border,
+    borderColor: darkTheme.colors.border,
   },
   rowLeft: { flexDirection: 'row', alignItems: 'center' },
-  rowLabel: { marginLeft: 12, fontSize: 16, color: lightTheme.colors.text },
+  rowLabel: { marginLeft: 12, fontSize: 16, color: darkTheme.colors.text },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap' },
   pill: {
     paddingVertical: 3,
     paddingHorizontal: 14,
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: lightTheme.colors.border,
+    borderColor: darkTheme.colors.border,
     marginRight: 8,
     marginBottom: 8,
   },
-  pillActive: { backgroundColor: lightTheme.colors.primary, borderColor: lightTheme.colors.primary },
-  pillText: { color: lightTheme.colors.text },
+  pillActive: { backgroundColor: darkTheme.colors.primary, borderColor: darkTheme.colors.primary },
+  pillText: { color: darkTheme.colors.text },
   pillTextActive: { color: '#fff', fontWeight: '600' },
-  helperText: { marginTop: 1, color: lightTheme.colors.muted },
+  helperText: { marginTop: 1, color: darkTheme.colors.muted },
 });

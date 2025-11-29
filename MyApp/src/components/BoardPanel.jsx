@@ -4,7 +4,7 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useHeaderHeight } from '@react-navigation/elements';
 import ChessBoard from './ChessBoard';
 import { Ionicons } from '@expo/vector-icons';
-import { lightTheme } from '../theme';
+import { darkTheme } from '../theme';
 
 /**
  * BoardPanel
@@ -103,14 +103,14 @@ export default function BoardPanel({
         />
       </View>
       <View style={[styles.bannerOverlay, { top: bannerTop, width: bannerWidth, left: (windowWidth - bannerWidth) / 2 }]}>
-        <Text style={styles.bannerText}>Can you solve the puzzle?</Text>
+        <Text style={styles.bannerText}>Can you solve this puzzle?</Text>
       </View>
       <View style={[styles.actionsRight, { bottom: overlayBottom }]} pointerEvents="box-none">
         <Pressable onPress={handleLikePress} style={styles.iconOnlyBtn} hitSlop={12}>
           <Ionicons
             name={liked ? 'heart' : 'heart-outline'}
             size={35}
-            color={liked ? lightTheme.colors.text : lightTheme.colors.text}
+            color={liked ? darkTheme.colors.text : darkTheme.colors.text}
             style={liked ? styles.filledIcon : null}
           />
         </Pressable>
@@ -118,7 +118,7 @@ export default function BoardPanel({
           <Ionicons
             name={shared ? 'share' : 'share-outline'}
             size={35}
-            color={shared ? lightTheme.colors.text : lightTheme.colors.text}
+            color={shared ? darkTheme.colors.text : darkTheme.colors.text}
           />
         </Pressable>
       </View>
@@ -136,7 +136,7 @@ export default function BoardPanel({
             },
           ]}
         >
-          <Ionicons name="heart" size={120} color={lightTheme.colors.text} />
+          <Ionicons name="heart" size={120} color={darkTheme.colors.error} />
         </Animated.View>
       )}
     </View>
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   actionsRight: { position: 'absolute', right: 16, alignItems: 'center' },
   actionBtn: {},
   leftTextWrap: { position: 'absolute', left: 16, alignItems: 'flex-start' },
-  sideText: { fontSize: 25, fontWeight: '700', color: lightTheme.colors.text },
+  sideText: { fontSize: 25, fontWeight: '700', color: darkTheme.colors.text },
   iconOnlyBtn: { alignItems: 'center', justifyContent: 'center' },
   filledIcon: { },
   bigHeartOverlay: {
@@ -165,8 +165,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     paddingVertical: 8,
     paddingHorizontal: 16,
-    backgroundColor: lightTheme.colors.primary,
+    backgroundColor: darkTheme.colors.primary,
     borderRadius: 12,
   },
-  bannerText: { fontSize: 18, fontWeight: '600', color: lightTheme.colors.text, textAlign: 'center' },
+  bannerText: { fontSize: 18, fontWeight: '600', color: darkTheme.colors.text, textAlign: 'center' },
 });

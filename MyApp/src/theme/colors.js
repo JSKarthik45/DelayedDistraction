@@ -28,7 +28,7 @@ export const lightColors = {
 export const darkColors = {
   primary: palette.primary,
   secondary: palette.secondary,
-  background: '#0b1220',
+  background: '#000000ff',
   surface: '#111827',
   text: '#e5e7eb',
   muted: '#9ca3af',
