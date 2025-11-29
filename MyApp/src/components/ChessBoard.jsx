@@ -1,5 +1,6 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { View, Text, Pressable } from 'react-native';
+import { FontAwesome5 } from '@expo/vector-icons';
 import { lightTheme } from '../theme';
 // Logic library (install: npm install chess.js)
 // We guard import to avoid runtime crash if not installed yet.
@@ -15,20 +16,21 @@ try {
   ChessLib = null;
 }
 
-const pieceUnicode = {
-  p: { w: '\u2659', b: '\u265F' },
-  r: { w: '\u2656', b: '\u265C' },
-  n: { w: '\u2658', b: '\u265E' },
-  b: { w: '\u2657', b: '\u265D' },
-  q: { w: '\u2655', b: '\u265B' },
-  k: { w: '\u2654', b: '\u265A' },
+const iconNameFromType = {
+  p: 'chess-pawn',
+  r: 'chess-rook',
+  n: 'chess-knight',
+  b: 'chess-bishop',
+  q: 'chess-queen',
+  k: 'chess-king',
 };
 
 export default function ChessBoard({ fen = 'start', size = 320, borderRadius = 0 }) {
   const squareSize = size / 8;
   const dark = lightTheme.colors.primary;
   const light = lightTheme.colors.secondary;
-  const pieceColor = lightTheme.colors.text;
+  const pieceColorWhite = '#F5F7FA';
+  const pieceColorBlack = '#1E1E1E';
   const highlightColor = lightTheme.colors.success || '#4caf50';
   const moveDotColor = lightTheme.colors.muted;
 
@@ -106,19 +108,34 @@ export default function ChessBoard({ fen = 'start', size = 320, borderRadius = 0
     }
   }, [game, selected, legalTargets]);
 
-  const renderSquareContent = (sq, r, c) => {
-    let glyph = '';
-    if (sq) {
-      const color = sq[0] === 'w' ? 'w' : 'b';
-      const type = sq[1].toLowerCase();
-      glyph = pieceUnicode[type][color];
+  // Reload board when incoming fen prop changes
+  useEffect(() => {
+    if (!game) return;
+    if (fen === 'start') {
+      try { game.reset(); } catch (e) { /* ignore */ }
+    } else {
+      try { game.load(fen); } catch (e) { /* ignore invalid fen */ }
     }
+    setSelected(null);
+    setLegalTargets([]);
+    refreshBoard();
+  }, [fen, game]);
+
+  const renderSquareContent = (sq, r, c) => {
     const squareAlg = algebraicFromRC(r, c);
     const isSelected = selected && selected.square === squareAlg;
     const isLegal = legalTargets.includes(squareAlg);
+    const iconSize = squareSize * 0.64;
     return (
       <>
-        {glyph ? <Text style={{ fontSize: squareSize * 0.72, color: pieceColor, fontWeight: '600' }}>{glyph}</Text> : null}
+        {sq ? (
+          <FontAwesome5
+            name={iconNameFromType[sq[1].toLowerCase()]}
+            size={iconSize}
+            color={sq[0] === 'w' ? pieceColorWhite : pieceColorBlack}
+            solid
+          />
+        ) : null}
         {isLegal && (
           <View style={{ position: 'absolute', width: squareSize * 0.3, height: squareSize * 0.3, borderRadius: 999, backgroundColor: moveDotColor, opacity: 0.5 }} />
         )}

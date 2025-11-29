@@ -1,36 +1,40 @@
-import React, { useRef, useState, useContext } from 'react';
-import { View, Text, StyleSheet, FlatList, Dimensions } from 'react-native';
+import React, { useRef, useState, useContext, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, Dimensions, ScrollView } from 'react-native';
 import CircleButton from '../../components/CircleButton';
 import { OnboardingContext } from '../../navigation/OnboardingContext';
 import { lightTheme } from '../../theme';
+import SettingsQuickSetup from '../../components/SettingsQuickSetup';
+import { loadPreferences, savePreferences } from '../../storage/preferences';
 
 const { width } = Dimensions.get('window');
 
 const PAGES = [
-  {
-    key: 'welcome',
-    title: 'Welcome',
-    subtitle: 'Onboarding starts here.',
-  },
-  {
-    key: 'features',
-    title: 'Features',
-    subtitle: 'Quick tour of what the app can do.',
-  },
-  {
-    key: 'permissions',
-    title: 'Permissions',
-    subtitle: 'Explain required app permissions here.',
-  },
+  { key: 'problem' },
+  { key: 'solution' },
+  { key: 'setup' },
+  { key: 'motivation' },
 ];
 
 export default function OnboardingPager() {
   const listRef = useRef(null);
   const [index, setIndex] = useState(0);
   const { completeOnboarding } = useContext(OnboardingContext);
+  const [blocked, setBlocked] = useState({});
+  const [problemTarget, setProblemTarget] = useState(5);
+
+  useEffect(() => {
+    (async () => {
+      const pref = await loadPreferences();
+      setBlocked(pref.blocked || {});
+      setProblemTarget(pref.problemTarget ?? 5);
+    })();
+  }, []);
 
   const goNext = async () => {
     const next = index + 1;
+    if (PAGES[index]?.key === 'setup') {
+      await savePreferences({ blocked, problemTarget });
+    }
     if (next < PAGES.length) {
       setIndex(next);
       listRef.current?.scrollToIndex({ index: next, animated: true });
@@ -52,12 +56,45 @@ export default function OnboardingPager() {
           const newIndex = Math.round(e.nativeEvent.contentOffset.x / width);
           setIndex(newIndex);
         }}
-        renderItem={({ item }) => (
-          <View style={[styles.page, { width, backgroundColor: lightTheme.colors.background }]}> 
-            <Text style={[styles.title, { color: lightTheme.colors.text }]}>{item.title}</Text>
-            <Text style={[styles.subtitle, { color: lightTheme.colors.muted }]}>{item.subtitle}</Text>
-          </View>
-        )}
+        renderItem={({ item }) => {
+          if (item.key === 'problem') {
+            return (
+              <View style={[styles.page, { width, backgroundColor: lightTheme.colors.background }]}> 
+                <Text style={[styles.title, { color: lightTheme.colors.text }]}>Distracted by endless scrolling?</Text>
+                <Text style={[styles.subtitle, { color: lightTheme.colors.muted }]}>Social apps grab your attention and drain hours every day, breaking your focus and delaying your goals.</Text>
+              </View>
+            );
+          }
+          if (item.key === 'solution') {
+            return (
+              <View style={[styles.page, { width, backgroundColor: lightTheme.colors.background }]}> 
+                <Text style={[styles.title, { color: lightTheme.colors.text }]}>Turn distractions into progress</Text>
+                <Text style={[styles.subtitle, { color: lightTheme.colors.muted }]}>Block selected apps until you complete a set of chess puzzles. Build focus, sharpen thinking, and earn back your time.</Text>
+              </View>
+            );
+          }
+          if (item.key === 'setup') {
+            return (
+              <ScrollView style={{ width }} contentContainerStyle={[styles.page, { alignItems: 'stretch' }]}> 
+                <Text style={[styles.title, { color: lightTheme.colors.text, textAlign: 'center' }]}>Quick setup</Text>
+                <Text style={[styles.subtitle, { color: lightTheme.colors.muted, textAlign: 'center', marginBottom: 16 }]}>Choose which apps to block and how many puzzles to solve.</Text>
+                <SettingsQuickSetup
+                  blocked={blocked}
+                  setBlocked={setBlocked}
+                  problemTarget={problemTarget}
+                  setProblemTarget={setProblemTarget}
+                />
+              </ScrollView>
+            );
+          }
+          // motivation
+          return (
+            <View style={[styles.page, { width, backgroundColor: lightTheme.colors.background }]}> 
+              <Text style={[styles.title, { color: lightTheme.colors.text }]}>Rewire your brain and habits</Text>
+              <Text style={[styles.subtitle, { color: lightTheme.colors.muted }]}>Crush puzzles. Unblock apps. Repeat. Watch your discipline grow, your habits change, and your time return to you.</Text>
+            </View>
+          );
+        }}
       />
 
       <View style={styles.dots}>
@@ -69,7 +106,7 @@ export default function OnboardingPager() {
       <CircleButton
         onPress={goNext}
         icon={index === PAGES.length - 1 ? 'checkmark' : 'arrow-forward'}
-        backgroundColor={index === PAGES.length - 1 ? lightTheme.colors.secondary : lightTheme.colors.primary}
+        backgroundColor={index === PAGES.length - 1 ? lightTheme.colors.primary : lightTheme.colors.primary}
         style={styles.fab}
       />
     </View>
@@ -84,7 +121,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 24,
   },
-  title: { fontSize: 28, fontWeight: '700' },
+  title: { fontSize: 28, fontWeight: '700', textAlign: 'center' },
   subtitle: { marginTop: 10, textAlign: 'center' },
   dots: {
     position: 'absolute',

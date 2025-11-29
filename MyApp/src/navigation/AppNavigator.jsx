@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Pressable } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/main/HomeScreen';
@@ -9,31 +9,63 @@ import { lightTheme } from '../theme';
 const Tab = createBottomTabNavigator();
 
 export default function AppNavigator() {
+  const [headerMode, setHeaderMode] = useState('Trending');
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: true,
-        tabBarIcon: ({ color, size }) => {
-          let iconName = 'home';
-          if (route.name === 'Home') iconName = 'home-outline';
-          if (route.name === 'Settings') iconName = 'settings-outline';
-          return <Ionicons name={iconName} size={size} color={color} />;
+        tabBarActiveTintColor: '#ffffff',
+        tabBarInactiveTintColor: '#ffffff',
+        tabBarStyle: {
+          height: 60,
+          paddingTop: 2,
+          paddingBottom: 16, // extra bottom space for safer tap target
+        },
+        tabBarIcon: ({ focused, size }) => {
+          let iconName;
+          if (route.name === 'Home') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'Settings') {
+            iconName = focused ? 'settings' : 'settings-outline';
+          } else {
+            iconName = 'help-circle';
+          }
+          return <Ionicons name={iconName} size={size} color={'#ffffff'} />;
         },
       })}
     >
       <Tab.Screen
         name="Home"
-        component={HomeScreen}
         options={{
           headerTitleAlign: 'center',
           headerTitle: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 18, fontWeight: '600', color: lightTheme.colors.text }}>Trending</Text>
-              <Text style={{ fontSize: 18, fontWeight: '600', color: lightTheme.colors.text, marginLeft: 32 }}>Practice</Text>
+              {['Trending', 'Practice'].map((label, idx) => {
+                const isActive = headerMode === label;
+                return (
+                  <Pressable
+                    key={label}
+                    onPress={() => setHeaderMode(label)}
+                    style={{ marginLeft: idx === 0 ? 0 : 60 }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 18,
+                        fontWeight: '600',
+                        color: isActive ? lightTheme.colors.text : lightTheme.colors.muted,
+                      }}
+                    >
+                      {label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </View>
           ),
         }}
-      />
+      >
+        {() => <HomeScreen mode={headerMode} />}
+      </Tab.Screen>
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
