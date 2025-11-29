@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppNavigator from './src/navigation/AppNavigator';
 import OnboardingNavigator from './src/navigation/OnboardingNavigator';
@@ -7,6 +7,7 @@ import { OnboardingContext } from './src/navigation/OnboardingContext';
 import { NavigationContainer } from '@react-navigation/native';
 import { lightNavigationTheme } from './src/theme';
 import ThickSpinner from './src/components/ThickSpinner';
+import AnimatedSplash from './src/components/AnimatedSplash';
 
 // Toggle to force showing onboarding in development
 // Set to true during development to always see onboarding
@@ -16,6 +17,7 @@ const ONBOARDING_KEY = 'hasOnboarded';
 
 export default function App() {
   const [loading, setLoading] = useState(true);
+  const [splashDone, setSplashDone] = useState(false);
   const [hasOnboarded, setHasOnboarded] = useState(false);
   // In dev, start in onboarding even if stored as completed,
   // but allow switching to app after finishing within the session.
@@ -34,6 +36,11 @@ export default function App() {
     };
     init();
   }, []);
+
+  // Show animated splash first, while we also load onboarding state.
+  if (!splashDone) {
+    return <AnimatedSplash onFinish={() => setSplashDone(true)} />;
+  }
 
   if (loading) {
     return (

@@ -2,6 +2,7 @@ import React, { useRef, useState, useContext } from 'react';
 import { View, Text, StyleSheet, FlatList, Dimensions } from 'react-native';
 import CircleButton from '../../components/CircleButton';
 import { OnboardingContext } from '../../navigation/OnboardingContext';
+import { lightTheme } from '../../theme';
 
 const { width } = Dimensions.get('window');
 
@@ -10,6 +11,11 @@ const PAGES = [
     key: 'welcome',
     title: 'Welcome',
     subtitle: 'Onboarding starts here.',
+  },
+  {
+    key: 'features',
+    title: 'Features',
+    subtitle: 'Quick tour of what the app can do.',
   },
   {
     key: 'permissions',
@@ -47,23 +53,23 @@ export default function OnboardingPager() {
           setIndex(newIndex);
         }}
         renderItem={({ item }) => (
-          <View style={[styles.page, { width }]}> 
-            <Text style={styles.title}>{item.title}</Text>
-            <Text style={styles.subtitle}>{item.subtitle}</Text>
+          <View style={[styles.page, { width, backgroundColor: lightTheme.colors.background }]}> 
+            <Text style={[styles.title, { color: lightTheme.colors.text }]}>{item.title}</Text>
+            <Text style={[styles.subtitle, { color: lightTheme.colors.muted }]}>{item.subtitle}</Text>
           </View>
         )}
       />
 
       <View style={styles.dots}>
         {PAGES.map((p, i) => (
-          <View key={p.key} style={[styles.dot, i === index && styles.dotActive]} />
+          <View key={p.key} style={[styles.dot, { backgroundColor: i === index ? lightTheme.colors.primary : lightTheme.colors.border }]} />
         ))}
       </View>
 
       <CircleButton
         onPress={goNext}
         icon={index === PAGES.length - 1 ? 'checkmark' : 'arrow-forward'}
-        backgroundColor={index === PAGES.length - 1 ? '#22c55e' : '#1e90ff'}
+        backgroundColor={index === PAGES.length - 1 ? lightTheme.colors.secondary : lightTheme.colors.primary}
         style={styles.fab}
       />
     </View>
@@ -79,7 +85,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   title: { fontSize: 28, fontWeight: '700' },
-  subtitle: { marginTop: 10, color: '#666', textAlign: 'center' },
+  subtitle: { marginTop: 10, textAlign: 'center' },
   dots: {
     position: 'absolute',
     bottom: 96,
@@ -93,10 +99,8 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#d1d5db',
   },
   dotActive: {
-    backgroundColor: '#1e90ff',
   },
   fab: {
     position: 'absolute',
