@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { darkTheme } from '../theme';
+import { useThemeColors } from '../theme/ThemeContext';
 // Logic library (install: npm install chess.js)
 // We guard import to avoid runtime crash if not installed yet.
 let ChessLib;
@@ -27,12 +27,13 @@ const iconNameFromType = {
 
 export default function ChessBoard({ fen = 'start', size = 320, borderRadius = 0 }) {
   const squareSize = size / 8;
-  const dark = darkTheme.colors.primary;
-  const light = darkTheme.colors.secondary;
+  const colors = useThemeColors();
+  const dark = colors.primary;
+  const light = colors.secondary;
   const pieceColorWhite = '#F5F7FA';
   const pieceColorBlack = '#1E1E1E';
-  const highlightColor = darkTheme.colors.success || '#4caf50';
-  const moveDotColor = darkTheme.colors.muted;
+  const highlightColor = colors.success || '#4caf50';
+  const moveDotColor = colors.muted;
 
   const [game] = useState(() => {
     if (!ChessLib) return null;
@@ -152,7 +153,7 @@ export default function ChessBoard({ fen = 'start', size = 320, borderRadius = 0
   };
 
   return (
-    <View style={{ width: size, height: size, borderRadius, overflow: 'hidden', backgroundColor: darkTheme.colors.surface, borderWidth: 2, borderColor: darkTheme.colors.border }}>
+    <View style={{ width: size, height: size, borderRadius, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 2, borderColor: colors.border }}>
       {boardData.map((rank, r) => (
         <View key={`r-${r}`} style={{ flexDirection: 'row' }}>
           {rank.map((sq, c) => {

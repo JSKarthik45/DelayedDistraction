@@ -4,7 +4,7 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useHeaderHeight } from '@react-navigation/elements';
 import ChessBoard from './ChessBoard';
 import { Ionicons } from '@expo/vector-icons';
-import { darkTheme } from '../theme';
+import { useThemeColors, useThemedStyles } from '../theme/ThemeContext';
 
 /**
  * BoardPanel
@@ -16,6 +16,34 @@ import { darkTheme } from '../theme';
  *  - initialLiked / initialShared: booleans
  *  - onLikeChange / onShareChange: callbacks receiving new state
  */
+const styleFactory = (colors) => StyleSheet.create({
+  root: { flex: 1 },
+  boardCenter: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  actionsRight: { position: 'absolute', right: 16, alignItems: 'center' },
+  actionBtn: {},
+  leftTextWrap: { position: 'absolute', left: 16, alignItems: 'flex-start' },
+  sideText: { fontSize: 25, fontWeight: '700', color: colors.text },
+  iconOnlyBtn: { alignItems: 'center', justifyContent: 'center' },
+  filledIcon: {},
+  bigHeartOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bannerOverlay: {
+    position: 'absolute',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+  },
+  bannerText: { fontSize: 18, fontWeight: '600', color: colors.text, textAlign: 'center' },
+});
+
 export default function BoardPanel({
   fen = 'start',
   turnText = 'White to play',
@@ -93,6 +121,9 @@ export default function BoardPanel({
     });
   };
 
+  const colors = useThemeColors();
+  const styles = useThemedStyles(styleFactory);
+
   return (
     <View style={styles.root}>
       <View style={styles.boardCenter}>
@@ -110,7 +141,7 @@ export default function BoardPanel({
           <Ionicons
             name={liked ? 'heart' : 'heart-outline'}
             size={35}
-            color={liked ? darkTheme.colors.text : darkTheme.colors.text}
+            color={colors.text}
             style={liked ? styles.filledIcon : null}
           />
         </Pressable>
@@ -118,7 +149,7 @@ export default function BoardPanel({
           <Ionicons
             name={shared ? 'share' : 'share-outline'}
             size={35}
-            color={shared ? darkTheme.colors.text : darkTheme.colors.text}
+            color={colors.text}
           />
         </Pressable>
       </View>
@@ -136,37 +167,9 @@ export default function BoardPanel({
             },
           ]}
         >
-          <Ionicons name="heart" size={120} color={darkTheme.colors.error} />
+          <Ionicons name="heart" size={120} color={colors.error} />
         </Animated.View>
       )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1 },
-  boardCenter: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  actionsRight: { position: 'absolute', right: 16, alignItems: 'center' },
-  actionBtn: {},
-  leftTextWrap: { position: 'absolute', left: 16, alignItems: 'flex-start' },
-  sideText: { fontSize: 25, fontWeight: '700', color: darkTheme.colors.text },
-  iconOnlyBtn: { alignItems: 'center', justifyContent: 'center' },
-  filledIcon: { },
-  bigHeartOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bannerOverlay: {
-    position: 'absolute',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: darkTheme.colors.primary,
-    borderRadius: 12,
-  },
-  bannerText: { fontSize: 18, fontWeight: '600', color: darkTheme.colors.text, textAlign: 'center' },
-});

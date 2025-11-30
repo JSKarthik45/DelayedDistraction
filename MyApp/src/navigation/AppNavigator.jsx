@@ -4,35 +4,39 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/main/HomeScreen';
 import SettingsScreen from '../screens/main/SettingsScreen';
-import { darkTheme } from '../theme';
+import StreakScreen from '../screens/main/StreakScreen';
+import { useThemeColors } from '../theme/ThemeContext';
 
 const Tab = createBottomTabNavigator();
 
 export default function AppNavigator() {
+  const colors = useThemeColors();
   const [headerMode, setHeaderMode] = useState('Trending');
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: true,
-        tabBarActiveTintColor: '#ffffff',
-        tabBarInactiveTintColor: '#ffffff',
-        tabBarStyle: {backgroundColor: darkTheme.colors.background, borderTopWidth: 0},
-        headerStyle: { backgroundColor: darkTheme.colors.background },
+        tabBarActiveTintColor: colors.text,
+        tabBarInactiveTintColor: colors.muted,
+        tabBarStyle: {backgroundColor: colors.background, borderTopWidth: 0},
+        headerStyle: { backgroundColor: colors.background },
         tabBarIcon: ({ focused, size }) => {
           let iconName;
-          if (route.name === 'Home') {
-            iconName = focused ? 'home' : 'home-outline';
+          if (route.name === 'Puzzles') {
+            iconName = focused ? 'grid' : 'grid-outline';
           } else if (route.name === 'Settings') {
             iconName = focused ? 'settings' : 'settings-outline';
+          } else if (route.name === 'Streak') {
+            iconName = focused ? 'flame' : 'flame-outline';
           } else {
             iconName = 'help-circle';
           }
-          return <Ionicons name={iconName} size={size} color={'#ffffff'} />;
+          return <Ionicons name={iconName} size={size} color={colors.primary} />;
         },
       })}
     >
       <Tab.Screen 
-        name="Home"
+        name="Puzzles"
         options={{
           headerTitleAlign: 'center',
           headerTitle: () => (
@@ -49,7 +53,7 @@ export default function AppNavigator() {
                       style={{
                         fontSize: 18,
                         fontWeight: '600',
-                        color: isActive ? darkTheme.colors.text : darkTheme.colors.muted,
+                        color: isActive ? colors.text : colors.muted,
                       }}
                     >
                       {label}
@@ -63,6 +67,19 @@ export default function AppNavigator() {
       >
         {() => <HomeScreen mode={headerMode} />}
       </Tab.Screen>
+      <Tab.Screen name="Streak" component={StreakScreen} 
+        options={{ headerTitleAlign: 'center',
+          headerTitle: () => (
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: '600',
+                color: colors.text,
+              }}
+            >
+              Streak
+            </Text>
+          ) }} />
       <Tab.Screen name="Settings" component={SettingsScreen} 
         options={{ headerTitleAlign: 'center',
           headerTitle: () => (
@@ -70,7 +87,7 @@ export default function AppNavigator() {
               style={{
                 fontSize: 18,
                 fontWeight: '600',
-                color: darkTheme.colors.text,
+                color: colors.text,
               }}
             >
               Settings
