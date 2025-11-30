@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions, Pressable, Animated, Easing } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, Dimensions, Pressable, Animated, Easing, Vibration } from 'react-native';
+//import { Audio } from 'expo-av';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useHeaderHeight } from '@react-navigation/elements';
 import ChessBoard from './ChessBoard';
@@ -19,10 +20,10 @@ import { useThemeColors, useThemedStyles } from '../theme/ThemeContext';
 const styleFactory = (colors) => StyleSheet.create({
   root: { flex: 1 },
   boardCenter: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  actionsRight: { position: 'absolute', right: 16, alignItems: 'center' },
+  actionsRight: { position: 'absolute', right: 16, alignItems: 'center', gap: 5},
   actionBtn: {},
   leftTextWrap: { position: 'absolute', left: 16, alignItems: 'flex-start' },
-  sideText: { fontSize: 25, fontWeight: '700', color: colors.text },
+  sideText: { fontSize: 20, fontWeight: '700', color: colors.text },
   iconOnlyBtn: { alignItems: 'center', justifyContent: 'center' },
   filledIcon: {},
   bigHeartOverlay: {
@@ -53,6 +54,9 @@ export default function BoardPanel({
   onLikeChange,
   onShareChange,
   heightFraction = 1,
+  text = "Can you solve this puzzle?", 
+  correctMove = null,
+  onAdvance,
 }) {
   const [liked, setLiked] = useState(initialLiked);
   const [shared, setShared] = useState(initialShared);
@@ -74,6 +78,13 @@ export default function BoardPanel({
   const bigHeartScale = useRef(new Animated.Value(0)).current;
   const bigHeartOpacity = useRef(new Animated.Value(0)).current;
   const [showBigHeart, setShowBigHeart] = useState(false);
+  const [bannerText, setBannerText] = useState(text);
+  const [bannerVariant, setBannerVariant] = useState('default'); // default|correct|incorrect
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+  const [confettiItems, setConfettiItems] = useState([]); // poured confetti pieces
+  const lastPanelTap = useRef(0);
+  const correctSoundRef = useRef(null);
+  const [soundLoaded, setSoundLoaded] = useState(false);
 
   const triggerBigHeart = () => {
     setShowBigHeart(true);
@@ -113,6 +124,20 @@ export default function BoardPanel({
     lastLikeTap.current = now;
   };
 
+  // Double tap anywhere on panel to like
+  const handlePanelTouch = () => {
+    const now = Date.now();
+    const DOUBLE_TAP_MAX_MS = 180; // strict fast double-tap only
+    if (now - lastPanelTap.current < DOUBLE_TAP_MAX_MS) {
+      if (!liked) {
+        setLiked(true);
+        onLikeChange && onLikeChange(true);
+        triggerBigHeart();
+      }
+    }
+    lastPanelTap.current = now;
+  };
+
   const handleSharePress = () => {
     setShared(prev => {
       const next = !prev;
@@ -121,34 +146,121 @@ export default function BoardPanel({
     });
   };
 
+  /*const playCorrectSound = async () => {
+    try {
+      if (!soundLoaded) {
+        const { sound } = await Audio.Sound.createAsync(
+          require('../../assets/sounds/correct.mp3'),
+          { shouldPlay: true, volume: 0.9 }
+        );
+        correctSoundRef.current = sound;
+        setSoundLoaded(true);
+      } else if (correctSoundRef.current) {
+        await correctSoundRef.current.replayAsync();
+      }
+    } catch (e) {
+      // silently ignore missing asset
+    }
+  };*/
+
+  const evaluateMove = (move) => {
+    if (!move || !move.san) return;
+    const isCorrect = !correctMove || move.san === correctMove;
+    if (isCorrect) {
+      setBannerVariant('correct');
+      setBannerText('Correct');
+      launchConfetti();
+      //playCorrectSound();
+    } else {
+      setBannerVariant('incorrect');
+      setBannerText('Incorrect');
+      triggerShake();
+      try { Vibration.vibrate(120); } catch {}
+    }
+    if (onAdvance) {
+      setTimeout(() => {
+        onAdvance();
+        setBannerVariant('default');
+        setBannerText(text);
+      }, 1000);
+    }
+  };
+
+  const triggerShake = () => {
+    shakeAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(shakeAnim, { toValue: 1, duration: 80, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -1, duration: 80, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 1, duration: 70, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
+    ]).start();
+  };
+
+  const launchConfetti = () => {
+    const palette = [colors.success, '#ffd700', colors.primary, colors.secondary];
+    const items = [];
+    const total = 70; // dense vertical pour across full width
+    for (let i = 0; i < total; i++) {
+      const id = Date.now() + '-' + i;
+      const x = Math.random() * windowWidth; // span full width
+      const size = 6 + Math.random() * 10;
+      const fall = new Animated.Value(0);
+      const rotate = new Animated.Value(0);
+      const sway = new Animated.Value(0);
+      const clr = palette[i % palette.length];
+      items.push({ id, x, size, fall, rotate, sway, clr });
+      Animated.parallel([
+        Animated.timing(fall, { toValue: 1, duration: 1900 + Math.random()*900, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.timing(rotate, { toValue: 1, duration: 1600 + Math.random()*800, easing: Easing.linear, useNativeDriver: true }),
+        Animated.timing(sway, { toValue: 1, duration: 1900 + Math.random()*900, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+      ]).start();
+    }
+    setConfettiItems(items);
+    setTimeout(() => setConfettiItems([]), 200);
+  };
+
+  const shakeTranslate = shakeAnim.interpolate({ inputRange: [-1,1], outputRange: [-6,6] });
+
   const colors = useThemeColors();
   const styles = useThemedStyles(styleFactory);
 
   return (
-    <View style={styles.root}>
+    <Animated.View
+      style={[styles.root, { transform: [{ translateX: shakeTranslate }] }] }
+      onTouchEndCapture={handlePanelTouch}
+    >
       <View style={styles.boardCenter}>
         <ChessBoard
           fen={fen}
           size={boardSize}
           borderRadius={borderRadius}
+          onMove={evaluateMove}
         />
       </View>
-      <View style={[styles.bannerOverlay, { top: bannerTop, width: bannerWidth, left: (windowWidth - bannerWidth) / 2 }]}>
-        <Text style={styles.bannerText}>Can you solve this puzzle?</Text>
+      <View style={[
+        styles.bannerOverlay,
+        {
+          top: bannerTop,
+          width: bannerWidth,
+          left: (windowWidth - bannerWidth) / 2,
+          backgroundColor: bannerVariant === 'correct' ? colors.success : bannerVariant === 'incorrect' ? colors.error : colors.surface,
+        },
+      ]}>
+        <Text style={[styles.bannerText, { color: bannerVariant === 'default' ? colors.text : '#fff' }]}>{bannerText}</Text>
       </View>
       <View style={[styles.actionsRight, { bottom: overlayBottom }]} pointerEvents="box-none">
         <Pressable onPress={handleLikePress} style={styles.iconOnlyBtn} hitSlop={12}>
           <Ionicons
             name={liked ? 'heart' : 'heart-outline'}
-            size={35}
+            size={33}
             color={colors.text}
             style={liked ? styles.filledIcon : null}
           />
         </Pressable>
         <Pressable onPress={handleSharePress} style={[styles.iconOnlyBtn, { marginTop: 16 }]} hitSlop={12}>
           <Ionicons
-            name={shared ? 'share' : 'share-outline'}
-            size={35}
+            name={shared ? 'paper-plane' : 'paper-plane-outline'}
+            size={33}
             color={colors.text}
           />
         </Pressable>
@@ -170,6 +282,36 @@ export default function BoardPanel({
           <Ionicons name="heart" size={120} color={colors.error} />
         </Animated.View>
       )}
-    </View>
+      {confettiItems.length > 0 && (
+        <View pointerEvents="none" style={{ position: 'absolute', inset: 0 }}>
+          {confettiItems.map(item => {
+            const translateY = item.fall.interpolate({ inputRange: [0,1], outputRange: [-40, windowHeight] });
+            const translateX = item.sway.interpolate({ inputRange: [0,1], outputRange: [0, (Math.random()*80 - 40)] });
+            const rotateDeg = item.rotate.interpolate({ inputRange: [0,1], outputRange: ['0deg','900deg'] });
+            const opacity = item.fall.interpolate({ inputRange: [0,1], outputRange: [1, 0] });
+            return (
+              <Animated.View
+                key={item.id}
+                style={{
+                  position: 'absolute',
+                  left: item.x,
+                  top: -50,
+                  width: item.size,
+                  height: item.size,
+                  backgroundColor: item.clr,
+                  borderRadius: 3,
+                  transform: [
+                    { translateY },
+                    { translateX },
+                    { rotate: rotateDeg },
+                  ],
+                  opacity,
+                }}
+              />
+            );
+          })}
+        </View>
+      )}
+    </Animated.View>
   );
 }

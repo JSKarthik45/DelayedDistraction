@@ -25,15 +25,15 @@ const iconNameFromType = {
   k: 'chess-king',
 };
 
-export default function ChessBoard({ fen = 'start', size = 320, borderRadius = 0 }) {
+export default function ChessBoard({ fen = 'start', size = 320, borderRadius = 0, onMove }) {
   const squareSize = size / 8;
   const colors = useThemeColors();
   const dark = colors.primary;
   const light = colors.secondary;
-  const pieceColorWhite = '#F5F7FA';
-  const pieceColorBlack = '#1E1E1E';
-  const highlightColor = colors.success || '#4caf50';
-  const moveDotColor = colors.muted;
+  const pieceColorWhite = '#ffffffff';
+  const pieceColorBlack = '#000000ff';
+  const highlightColor = '#5792ebff';
+  const moveDotColor = '#5792ebff';
 
   const [game] = useState(() => {
     if (!ChessLib) return null;
@@ -89,11 +89,16 @@ export default function ChessBoard({ fen = 'start', size = 320, borderRadius = 0
 
     // If there is a selection and this is a legal target -> move
     if (selected && legalTargets.includes(square)) {
+      let moveObj = null;
       try {
-        game.move({ from: selected.square, to: square, promotion: 'q' });
+        moveObj = game.move({ from: selected.square, to: square, promotion: 'q' });
       } catch (e) { /* invalid move ignore */ }
       setSelected(null);
       setLegalTargets([]);
+      // Emit move before refreshing board to ensure immediate feedback
+      if (moveObj && onMove) {
+        onMove({ san: moveObj.san, from: moveObj.from, to: moveObj.to, flags: moveObj.flags });
+      }
       refreshBoard();
       return;
     }
