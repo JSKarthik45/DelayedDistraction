@@ -14,7 +14,7 @@ import AnimatedSplash from './src/components/AnimatedSplash';
 
 // Toggle to force showing onboarding in development
 // Set to true during development to always see onboarding
-const SHOW_ONBOARDING_ALWAYS = false;
+const SHOW_ONBOARDING_ALWAYS = true;
 
 const ONBOARDING_KEY = 'hasOnboarded';
 

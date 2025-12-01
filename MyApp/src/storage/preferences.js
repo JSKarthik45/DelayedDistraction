@@ -8,6 +8,44 @@ const KEYS = {
   themeKey: 'dd_theme_key',
 };
 
+// Daily puzzle counts used for streak (date string -> number)
+export const PUZZLE_COUNTS_KEY = 'dd_puzzle_counts';
+
+// Lightweight event emitter for puzzle count changes
+const listeners = new Set();
+export function onPuzzleCountChanged(handler) {
+  listeners.add(handler);
+  return () => listeners.delete(handler);
+}
+function emitPuzzleCountChanged(payload) {
+  listeners.forEach((fn) => {
+    try { fn(payload); } catch {}
+  });
+}
+
+export async function incrementTodayPuzzleCount() {
+  const today = new Date().toISOString().substring(0, 10);
+  let counts = {};
+  try {
+    const raw = await AsyncStorage.getItem(PUZZLE_COUNTS_KEY);
+    counts = raw ? JSON.parse(raw) : {};
+  } catch {}
+  const next = { ...counts, [today]: (counts[today] || 0) + 1 };
+  try { await AsyncStorage.setItem(PUZZLE_COUNTS_KEY, JSON.stringify(next)); } catch {}
+  // Notify listeners
+  emitPuzzleCountChanged({ date: today, count: next[today] });
+  return next[today];
+}
+
+export async function getPuzzleCounts() {
+  try {
+    const raw = await AsyncStorage.getItem(PUZZLE_COUNTS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
 export async function loadPreferences() {
   try {
     const [blockedStr, targetStr, primary, secondary, themeKey] = await Promise.all([

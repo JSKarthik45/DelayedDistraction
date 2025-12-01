@@ -5,6 +5,7 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useHeaderHeight } from '@react-navigation/elements';
 import ChessBoard from './ChessBoard';
 import { Ionicons } from '@expo/vector-icons';
+import { incrementTodayPuzzleCount } from '../storage/preferences';
 import { useThemeColors, useThemedStyles } from '../theme/ThemeContext';
 
 /**
@@ -85,6 +86,7 @@ export default function BoardPanel({
   const lastPanelTap = useRef(0);
   const correctSoundRef = useRef(null);
   const [soundLoaded, setSoundLoaded] = useState(false);
+  const [solved, setSolved] = useState(false); // ensure daily counter increments only once per puzzle
 
   const triggerBigHeart = () => {
     setShowBigHeart(true);
@@ -167,6 +169,11 @@ export default function BoardPanel({
     if (!move || !move.san) return;
     const isCorrect = !correctMove || move.san === correctMove;
     if (isCorrect) {
+      if (!solved) {
+        setSolved(true);
+        // Increment today's solved puzzle counter for streak tracking
+        incrementTodayPuzzleCount();
+      }
       setBannerVariant('correct');
       setBannerText('Correct');
       launchConfetti();
@@ -182,7 +189,7 @@ export default function BoardPanel({
         onAdvance();
         setBannerVariant('default');
         setBannerText(text);
-      }, 1000);
+      }, 2500);
     }
   };
 

@@ -95,11 +95,11 @@ export default function ChessBoard({ fen = 'start', size = 320, borderRadius = 0
       } catch (e) { /* invalid move ignore */ }
       setSelected(null);
       setLegalTargets([]);
-      // Emit move before refreshing board to ensure immediate feedback
+      refreshBoard();
       if (moveObj && onMove) {
+        // Provide minimal move payload (SAN + from/to)
         onMove({ san: moveObj.san, from: moveObj.from, to: moveObj.to, flags: moveObj.flags });
       }
-      refreshBoard();
       return;
     }
 

@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, Animated, Dimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { PUZZLE_COUNTS_KEY, getPuzzleCounts, incrementTodayPuzzleCount, onPuzzleCountChanged } from '../../storage/preferences';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors, useThemedStyles } from '../../theme/ThemeContext';
 
-const COUNTS_KEY = 'dd_puzzle_counts'; // { [YYYY-MM-DD]: number }
+// Use shared storage key/helpers for daily puzzle counts
+const COUNTS_KEY = PUZZLE_COUNTS_KEY; // { [YYYY-MM-DD]: number }
 
 const isoDay = (d = new Date()) => d.toISOString().substring(0, 10);
 const addDays = (date, days) => new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
@@ -50,14 +52,17 @@ export default function StreakScreen() {
 	const [bob] = useState(() => new Animated.Value(0)); // slow up/down
 	const [glow] = useState(() => new Animated.Value(0)); // pulsing aura
 
-	// Load counts on mount
+	// Load counts on mount via helper
 	useEffect(() => {
 		(async () => {
-			try {
-				const raw = await AsyncStorage.getItem(COUNTS_KEY);
-				setCounts(raw ? JSON.parse(raw) : {});
-			} catch {}
+			const loaded = await getPuzzleCounts();
+			setCounts(loaded);
 		})();
+		// Subscribe to live increments from gameplay
+		const unsubscribe = onPuzzleCountChanged(({ date, count }) => {
+			setCounts(prev => ({ ...prev, [date]: count }));
+		});
+		return () => unsubscribe();
 	}, []);
 
 	// Compute weeks (12) x 7 days heatmap data ending today
@@ -157,13 +162,10 @@ export default function StreakScreen() {
 	);
 
 	const incrementToday = useCallback(async () => {
+		const count = await incrementTodayPuzzleCount();
 		const today = isoDay();
-		const next = { ...counts, [today]: (counts[today] || 0) + 1 };
-		setCounts(next);
-		try {
-			await AsyncStorage.setItem(COUNTS_KEY, JSON.stringify(next));
-		} catch {}
-	}, [counts]);
+		setCounts(prev => ({ ...prev, [today]: count }));
+	}, []);
 
 	return (
 		<View style={styles.root}>
@@ -245,12 +247,13 @@ export default function StreakScreen() {
 					<Text style={[styles.legendLabel, { marginLeft: 4 }]}>More</Text>
 				</View>
 			</View>
-
+			{/*
 			<View style={styles.actionsRow}>
 				<Pressable onPress={incrementToday} style={styles.fab} accessibilityLabel="Add one puzzle to today">
 					<Ionicons name="add" size={28} color="#fff" />
 				</Pressable>
 			</View>
+			*/}
 		</View>
 	);
 }
