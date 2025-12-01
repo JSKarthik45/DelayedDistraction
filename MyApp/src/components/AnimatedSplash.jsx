@@ -1,53 +1,34 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
-import { lightTheme } from '../theme';
+import { View, StyleSheet, Animated, Easing, Image } from 'react-native';
+import { useThemeColors } from '../theme/ThemeContext';
 
-// Simple chess-themed animation: a fading + scaling knight glyph and sliding board rows.
-export default function AnimatedSplash({ onFinish, duration = 1800 }) {
-  const scale = useRef(new Animated.Value(0.4)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
-  const barTranslate = useRef(new Animated.Value(-60)).current;
+// Ultra-minimal splash: fade + gentle scale of logo.png, rounded, quick dopamine pop.
+export default function AnimatedSplash({ onFinish, duration = 900 }) {
+	const colors = useThemeColors();
+	const fade = useRef(new Animated.Value(0)).current;
+	const scale = useRef(new Animated.Value(0.92)).current;
 
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(scale, { toValue: 1, duration: 700, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-      Animated.timing(opacity, { toValue: 1, duration: 600, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      Animated.timing(barTranslate, { toValue: 0, duration: 800, easing: Easing.out(Easing.cubic), useNativeDriver: true })
-    ]).start(() => {
-      // Hold briefly then fade out
-      Animated.timing(opacity, { toValue: 0, duration: 500, delay: 400, useNativeDriver: true }).start(() => {
-        onFinish?.();
-      });
-    });
-  }, [onFinish, scale, opacity, barTranslate]);
+	useEffect(() => {
+		Animated.sequence([
+			Animated.parallel([
+				Animated.timing(fade, { toValue: 1, duration: 380, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+				Animated.timing(scale, { toValue: 1, duration: 620, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+			]),
+			Animated.delay(220),
+			Animated.timing(fade, { toValue: 0, duration: 300, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+		]).start(() => onFinish?.());
+	}, [fade, scale, onFinish]);
 
-  const bars = [0,1,2,3];
-  return (
-    <View style={styles.container}>
-      <Animated.View style={[styles.logoWrap, { transform: [{ scale }], opacity }]}>        
-        <Text style={styles.knight}>♞</Text>
-        <Text style={styles.title}>Delay Distractions</Text>
-      </Animated.View>
-      <View style={styles.board}>
-        {bars.map(i => (
-          <Animated.View
-            key={i}
-            style={[styles.boardRow, {
-              transform: [{ translateX: barTranslate }],
-              opacity: opacity.interpolate({ inputRange: [0,1], outputRange: [0,0.25] })
-            }]}
-          />
-        ))}
-      </View>
-    </View>
-  );
+	return (
+		<Animated.View style={[styles.container, { backgroundColor: colors.background, opacity: fade }]}>      
+			<Animated.View style={{ transform: [{ scale }] }}>
+				<Image source={require('../../assets/logo.jpg')} style={styles.logo} />
+			</Animated.View>
+		</Animated.View>
+	);
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: lightTheme.colors.background, alignItems: 'center', justifyContent: 'center' },
-  logoWrap: { alignItems: 'center', justifyContent: 'center' },
-  knight: { fontSize: 72, color: lightTheme.colors.primary },
-  title: { marginTop: 12, fontSize: 24, fontWeight: '600', color: lightTheme.colors.text },
-  board: { position: 'absolute', bottom: 80, width: '70%' },
-  boardRow: { height: 10, borderRadius: 5, backgroundColor: lightTheme.colors.primary, marginVertical: 6 },
+	container: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+	logo: { width: 300, height: 300, borderRadius: 32, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
 });

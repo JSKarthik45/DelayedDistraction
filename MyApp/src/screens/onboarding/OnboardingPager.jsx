@@ -1,5 +1,6 @@
 import React, { useRef, useState, useContext, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, Dimensions, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Dimensions, ScrollView, Animated } from 'react-native';
+import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CircleButton from '../../components/CircleButton';
@@ -80,6 +81,26 @@ export default function OnboardingPager() {
     }
   };
 
+  // Floating animations reused across pages
+  const floatA = useRef(new Animated.Value(0)).current;
+  const floatB = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatA, { toValue: 1, duration: 3000, useNativeDriver: true }),
+        Animated.timing(floatA, { toValue: 0, duration: 3000, useNativeDriver: true }),
+      ])
+    ).start();
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatB, { toValue: 1, duration: 2600, useNativeDriver: true }),
+        Animated.timing(floatB, { toValue: 0, duration: 2600, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+  const floatUpDownA = floatA.interpolate({ inputRange: [0,1], outputRange: [6, -6] });
+  const floatUpDownB = floatB.interpolate({ inputRange: [0,1], outputRange: [-5, 5] });
+
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top }]} edges={['top','left','right']}> 
       <FlatList
@@ -99,6 +120,33 @@ export default function OnboardingPager() {
               <View style={[styles.page, { width, backgroundColor: colors.background }]}> 
                   <Text style={[styles.title, { color: colors.secondary }]}>Distracted by endless scrolling?</Text>
                   <Text style={[styles.subtitle, { color: colors.muted }]}>Social apps grab your attention and drain hours every day, breaking your focus and delaying your goals.</Text>
+                  <View style={{ position: 'absolute', top: 80, left: 0, right: 0, bottom: 0 }} pointerEvents="none">
+                    {/* Scatter social icons around screen (hardcoded positions) */}
+                    <Animated.View style={{ position: 'absolute', left: 16, top: 40, transform: [{ translateY: floatUpDownA }] }}>
+                      <FontAwesome5 name="facebook" size={36} color="#1877F2" />
+                    </Animated.View>
+                    <Animated.View style={{ position: 'absolute', right: 24, top: 120, transform: [{ translateY: floatUpDownB }] }}>
+                      <FontAwesome5 name="twitter" size={36} color="#1DA1F2" />
+                    </Animated.View>
+                    <Animated.View style={{ position: 'absolute', left: width/2 - 18, top: 20, transform: [{ translateY: floatUpDownB }] }}>
+                      <FontAwesome5 name="instagram" size={36} color="#E1306C" />
+                    </Animated.View>
+                    <Animated.View style={{ position: 'absolute', left: width/4, top: 200, transform: [{ translateY: floatUpDownA }] }}>
+                      <FontAwesome5 name="youtube" size={36} color="#FF0000" />
+                    </Animated.View>
+                    <Animated.View style={{ position: 'absolute', left:102, bottom: 200, transform: [{ translateY: floatUpDownB }] }}>
+                      <FontAwesome5 name="snapchat" size={36} color="#FFFC00" />
+                    </Animated.View>
+                    <Animated.View style={{ position: 'absolute', right: 36, bottom: 220, transform: [{ translateY: floatUpDownA }] }}>
+                      <FontAwesome5 name="tiktok" size={36} color="#ffffffff" />
+                    </Animated.View>
+                    <Animated.View style={{ position: 'absolute', left: width - 100, top: 260, transform: [{ translateY: floatUpDownB }] }}>
+                      <FontAwesome5 name="reddit" size={36} color="#FF4500" />
+                    </Animated.View>
+                    <Animated.View style={{ position: 'absolute', left: 60, top: 300, transform: [{ translateY: floatUpDownA }] }}>
+                      <FontAwesome5 name="whatsapp" size={36} color="#25D366" />
+                    </Animated.View>
+                  </View>
               </View>
             );
           }
@@ -107,6 +155,27 @@ export default function OnboardingPager() {
               <View style={[styles.page, { width, backgroundColor: colors.background }]}> 
                   <Text style={[styles.title, { color: colors.secondary }]}>Turn distractions into progress</Text>
                   <Text style={[styles.subtitle, { color: colors.muted }]}>Block selected apps until you complete a set of chess puzzles. Build focus, sharpen thinking, and earn back your time.</Text>
+                  {/* Single row of chess pieces below text */}
+                  <View style={{ marginTop: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 18 }}>
+                    <Animated.View style={{ transform: [{ translateY: floatUpDownA }] }}>
+                      <FontAwesome5 name="chess-king" size={36} color={colors.primary} />
+                    </Animated.View>
+                    <Animated.View style={{ transform: [{ translateY: floatUpDownB }] }}>
+                      <FontAwesome5 name="chess-queen" size={36} color={colors.secondary} />
+                    </Animated.View>
+                    <Animated.View style={{ transform: [{ translateY: floatUpDownA }] }}>
+                      <FontAwesome5 name="chess-bishop" size={34} color={colors.text} />
+                    </Animated.View>
+                    <Animated.View style={{ transform: [{ translateY: floatUpDownB }] }}>
+                      <FontAwesome5 name="chess-knight" size={34} color={colors.muted} />
+                    </Animated.View>
+                    <Animated.View style={{ transform: [{ translateY: floatUpDownA }] }}>
+                      <FontAwesome5 name="chess-rook" size={34} color={colors.primary} />
+                    </Animated.View>
+                    <Animated.View style={{ transform: [{ translateY: floatUpDownB }] }}>
+                      <FontAwesome5 name="chess-pawn" size={34} color={colors.secondary} />
+                    </Animated.View>
+                  </View>
               </View>
             );
           }
@@ -129,6 +198,21 @@ export default function OnboardingPager() {
             <View style={[styles.page, { width, backgroundColor: colors.background }]}> 
                 <Text style={[styles.title, { color: colors.secondary }]}>Rewire your brain and habits</Text>
                 <Text style={[styles.subtitle, { color: colors.muted }]}>Crush puzzles. Unblock apps. Repeat. Watch your discipline grow, your habits change, and your time return to you.</Text>
+                {/* Single row of progress/habits/brain icons */}
+                <View style={{ marginTop: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 18 }}>
+                  <Animated.View style={{ transform: [{ translateY: floatUpDownA }] }}>
+                    <Ionicons name="fitness" size={36} color={colors.primary} />
+                  </Animated.View>
+                  <Animated.View style={{ transform: [{ translateY: floatUpDownB }] }}>
+                    <Ionicons name="trending-up" size={36} color={colors.secondary} />
+                  </Animated.View>
+                  <Animated.View style={{ transform: [{ translateY: floatUpDownA }] }}>
+                    <Ionicons name="time" size={36} color={colors.text} />
+                  </Animated.View>
+                  <Animated.View style={{ transform: [{ translateY: floatUpDownB }] }}>
+                    <Ionicons name="calendar" size={34} color={colors.muted} />
+                  </Animated.View>
+                </View>
             </View>
           );
         }}
