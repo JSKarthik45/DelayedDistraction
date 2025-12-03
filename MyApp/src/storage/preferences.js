@@ -8,6 +8,33 @@ const KEYS = {
   themeKey: 'dd_theme_key',
 };
 
+// Latest viewed puzzle id per table
+export const LATEST_KEYS = {
+  TrendingPuzzles: 'dd_latest_trending_id',
+  PracticePuzzles: 'dd_latest_practice_id',
+};
+
+export async function getLatestPuzzleId(tableName) {
+  try {
+    const key = LATEST_KEYS[tableName];
+    if (!key) return null;
+    const raw = await AsyncStorage.getItem(key);
+    const num = raw ? Number(raw) : null;
+    return Number.isFinite(num) ? num : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function setLatestPuzzleId(tableName, id) {
+  try {
+    const key = LATEST_KEYS[tableName];
+    if (!key) return;
+    if (id == null) return;
+    await AsyncStorage.setItem(key, String(id));
+  } catch {}
+}
+
 // Daily puzzle counts used for streak (date string -> number)
 export const PUZZLE_COUNTS_KEY = 'dd_puzzle_counts';
 

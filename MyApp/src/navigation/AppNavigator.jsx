@@ -48,6 +48,7 @@ export default function AppNavigator() {
                     key={label}
                     onPress={() => setHeaderMode(label)}
                     style={{ marginLeft: idx === 0 ? 0 : 60 }}
+                  
                   >
                     <Text
                       style={{

@@ -47,7 +47,7 @@ const styleFactory = (colors) => StyleSheet.create({
 });
 
 export default function BoardPanel({
-  fen = 'start',
+  fen,
   turnText = 'White to play',
   borderRadius = 10,
   initialLiked = false,
@@ -58,6 +58,8 @@ export default function BoardPanel({
   text = "Can you solve this puzzle?", 
   correctMove = null,
   onAdvance,
+  autoAdvance = false,
+  boardId,
 }) {
   const [liked, setLiked] = useState(initialLiked);
   const [shared, setShared] = useState(initialShared);
@@ -87,6 +89,15 @@ export default function BoardPanel({
   const correctSoundRef = useRef(null);
   const [soundLoaded, setSoundLoaded] = useState(false);
   const [solved, setSolved] = useState(false); // ensure daily counter increments only once per puzzle
+
+  // Reset per-puzzle local state when the board changes
+  React.useEffect(() => {
+    setLiked(initialLiked || false);
+    setShared(initialShared || false);
+    setSolved(false);
+    setBannerVariant('default');
+    setBannerText(text);
+  }, [boardId, text, initialLiked, initialShared, fen]);
 
   const triggerBigHeart = () => {
     setShowBigHeart(true);
@@ -184,7 +195,8 @@ export default function BoardPanel({
       triggerShake();
       try { Vibration.vibrate(120); } catch {}
     }
-    if (onAdvance) {
+    // No automatic advance unless explicitly enabled
+    if (autoAdvance && onAdvance) {
       setTimeout(() => {
         onAdvance();
         setBannerVariant('default');
@@ -231,6 +243,13 @@ export default function BoardPanel({
   const colors = useThemeColors();
   const styles = useThemedStyles(styleFactory);
 
+  // Keep last non-empty FEN to avoid flicker when prop is briefly undefined
+  const lastFenRef = useRef(fen && typeof fen === 'string' && fen.length > 0 ? fen : null);
+  if (fen && typeof fen === 'string' && fen.length > 0 && lastFenRef.current !== fen) {
+    lastFenRef.current = fen;
+  }
+  const effectiveFen = lastFenRef.current || 'start';
+
   return (
     <Animated.View
       style={[styles.root, { transform: [{ translateX: shakeTranslate }] }] }
@@ -238,7 +257,7 @@ export default function BoardPanel({
     >
       <View style={styles.boardCenter}>
         <ChessBoard
-          fen={fen}
+          fen={effectiveFen}
           size={boardSize}
           borderRadius={borderRadius}
           onMove={evaluateMove}

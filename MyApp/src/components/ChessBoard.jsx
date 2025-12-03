@@ -114,14 +114,18 @@ export default function ChessBoard({ fen = 'start', size = 320, borderRadius = 0
     }
   }, [game, selected, legalTargets]);
 
-  // Reload board when incoming fen prop changes
+  // Reload board when incoming fen prop changes (avoid redundant reloads)
+  const lastLoadedFenRef = React.useRef(null);
   useEffect(() => {
     if (!game) return;
+    if (fen == null) return;
+    if (lastLoadedFenRef.current === fen) return;
     if (fen === 'start') {
       try { game.reset(); } catch (e) { /* ignore */ }
     } else {
       try { game.load(fen); } catch (e) { /* ignore invalid fen */ }
     }
+    lastLoadedFenRef.current = fen;
     setSelected(null);
     setLegalTargets([]);
     refreshBoard();

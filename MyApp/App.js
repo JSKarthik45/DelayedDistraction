@@ -12,9 +12,11 @@ import { ThemeProvider, useThemeColors, useThemeController } from './src/theme/T
 import ThickSpinner from './src/components/ThickSpinner';
 import AnimatedSplash from './src/components/AnimatedSplash';
 
+import getPuzzlesData from './src/services/getData';
+
 // Toggle to force showing onboarding in development
 // Set to true during development to always see onboarding
-const SHOW_ONBOARDING_ALWAYS = true;
+const SHOW_ONBOARDING_ALWAYS = false;
 
 const ONBOARDING_KEY = 'hasOnboarded';
 
