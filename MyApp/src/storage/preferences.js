@@ -6,6 +6,8 @@ const KEYS = {
   themePrimary: 'dd_theme_primary',
   themeSecondary: 'dd_theme_secondary',
   themeKey: 'dd_theme_key',
+  chessUsername: 'dd_chess_username',
+  chessTacticsRating: 'dd_chess_tactics_rating',
 };
 
 // Latest viewed puzzle id per table
@@ -75,19 +77,21 @@ export async function getPuzzleCounts() {
 
 export async function loadPreferences() {
   try {
-    const [blockedStr, targetStr, primary, secondary, themeKey] = await Promise.all([
+    const [blockedStr, targetStr, primary, secondary, themeKey, chessUsername, chessRating] = await Promise.all([
       AsyncStorage.getItem(KEYS.blockedApps),
       AsyncStorage.getItem(KEYS.problemTarget),
       AsyncStorage.getItem(KEYS.themePrimary),
       AsyncStorage.getItem(KEYS.themeSecondary),
       AsyncStorage.getItem(KEYS.themeKey),
+      AsyncStorage.getItem(KEYS.chessUsername),
+      AsyncStorage.getItem(KEYS.chessTacticsRating),
     ]);
     const blocked = blockedStr ? JSON.parse(blockedStr) : {};
     const problemTarget = targetStr ? Number(targetStr) : 5;
     const theme = (primary && secondary) ? { key: themeKey || 'classic', primary, secondary } : null;
-    return { blocked, problemTarget, theme };
+    return { blocked, problemTarget, theme, chessUsername: chessUsername || '', chessTacticsRating: chessRating ? Number(chessRating) : null };
   } catch (e) {
-    return { blocked: {}, problemTarget: 5, theme: null };
+    return { blocked: {}, problemTarget: 5, theme: null, chessUsername: '', chessTacticsRating: null };
   }
 }
 
@@ -129,5 +133,22 @@ export async function setTheme(theme) {
         AsyncStorage.setItem(KEYS.themeKey, theme.key || 'custom'),
       ]);
     }
+  } catch {}
+}
+
+export async function setChessUsername(username) {
+  try { await AsyncStorage.setItem(KEYS.chessUsername, username || ''); } catch {}
+}
+
+export async function setChessTacticsRating(rating) {
+  try { if (rating != null) await AsyncStorage.setItem(KEYS.chessTacticsRating, String(rating)); } catch {}
+}
+
+export async function clearChessImport() {
+  try {
+    await Promise.all([
+      AsyncStorage.removeItem(KEYS.chessUsername),
+      AsyncStorage.removeItem(KEYS.chessTacticsRating),
+    ]);
   } catch {}
 }

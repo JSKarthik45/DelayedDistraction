@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Switch, FlatList, Pressable, TextInput, ScrollView, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemedStyles, useThemeColors } from '../../theme/ThemeContext';
-import { loadPreferences, savePreferences, setTheme } from '../../storage/preferences';
+import { loadPreferences, savePreferences, setTheme, setChessUsername as saveChessUsername, setChessTacticsRating, clearChessImport } from '../../storage/preferences';
 import { useThemeController } from '../../theme/ThemeContext';
 
 const SOCIAL_APPS = [
@@ -102,6 +102,8 @@ export default function SettingsScreen() {
   const [problemTarget, setProblemTarget] = useState(5);
   const [chessUsername, setChessUsername] = useState('');
   const [themeKey, setThemeKey] = useState('classic');
+  const [tacticsRating, setTacticsRating] = useState(null);
+  const [importing, setImporting] = useState(false);
   const themeController = useThemeController();
   const colors = useThemeColors();
   const styles = useThemedStyles(styleFactory);
@@ -115,8 +117,25 @@ export default function SettingsScreen() {
       if (pref.theme) {
         setThemeKey(pref.theme.key || 'classic');
       }
+      if (pref.chessUsername) setChessUsername(pref.chessUsername);
+      if (pref.chessTacticsRating != null) setTacticsRating(pref.chessTacticsRating);
     })();
   }, []);
+  const importRating = async () => {
+    if (!chessUsername) return;
+    try {
+      setImporting(true);
+      const res = await fetch(`https://api.chess.com/pub/player/${chessUsername}/stats`);
+      const json = await res.json();
+      const rating = json?.tactics?.highest?.rating ?? null;
+      if (rating != null) {
+        setTacticsRating(rating);
+        await saveChessUsername(chessUsername);
+        await setChessTacticsRating(rating);
+      }
+    } catch {}
+    finally { setImporting(false); }
+  };
 
   const toggleApp = (key) => {
     setBlocked(prev => {
@@ -182,20 +201,34 @@ export default function SettingsScreen() {
       </View>
       <Text style={styles.helperText}>You must solve {problemTarget} problem(s) to unblock selected apps.</Text>
 
-      <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Import rating from Chess.com</Text>
+      <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Tactics Rating from Chess.com</Text>
       <View style={styles.card}>
-        <Text style={styles.cardLabel}>Chess.com Username</Text>
-        <TextInput
-          value={chessUsername}
-          onChangeText={setChessUsername}
-          placeholder="e.g., johndoe"
-          style={styles.input}
-          placeholderTextColor={colors.muted}
-        />
-        <Pressable style={[styles.primaryBtn, { opacity: chessUsername ? 1 : 0.6 }]} disabled={!chessUsername}>
-          <Text style={styles.primaryBtnText}>Import</Text>
-        </Pressable>
-        <Text style={styles.helperText}>UI only; no data is fetched yet.</Text>
+        {tacticsRating != null ? (
+          <>
+            <Text style={styles.cardLabel}>Tactics Highest Rating</Text>
+            <Text style={{ color: colors.text, fontSize: 22, fontWeight: '700' }}>{tacticsRating}</Text>
+            <Text style={styles.helperText}>Imported for {chessUsername}</Text>
+            <Pressable onPress={async () => { await clearChessImport(); setTacticsRating(null); setChessUsername(''); }} style={[styles.primaryBtn, { marginTop: 10, backgroundColor: colors.primary }]}>
+              <Text style={{ color: colors.text, fontWeight: '700' }}>Clear & Re-import</Text>
+            </Pressable>
+          </>
+        ) : (
+          <>
+            <Text style={styles.cardLabel}>Chess.com Username</Text>
+            <TextInput
+              value={chessUsername}
+              onChangeText={(t) => { setChessUsername(t); saveChessUsername(t); }}
+              placeholder="e.g., jskarthik45"
+              style={styles.input}
+              placeholderTextColor={colors.muted}
+              autoCapitalize="none"
+            />
+            <Pressable onPress={importRating} style={[styles.primaryBtn, { opacity: chessUsername && !importing ? 1 : 0.6 }]} disabled={!chessUsername || importing}>
+              <Text style={styles.primaryBtnText}>{importing ? 'Importing...' : 'Import'}</Text>
+            </Pressable>
+            <Text style={styles.helperText}>This rating is used to personalize your puzzle difficulty in practice mode.</Text>
+          </>
+        )}
       </View>
 
       <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Theme</Text>
