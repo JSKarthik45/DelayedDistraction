@@ -17,6 +17,7 @@ export async function getPuzzlesData(tableName, limit = 10, afterId = null) {
         ]);
 
     const { data: data, error: error } = res || {};
+        // logs removed
 
     const mapRows = (rows) => (rows || []).map((row) => ({
         id: (typeof row.id === 'number' ? row.id : null),

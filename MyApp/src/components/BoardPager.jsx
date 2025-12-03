@@ -36,6 +36,7 @@ export default function BoardPager({ boards, transitionMode = 'blank', tableName
     const len = source.length;
     const curr = source[currentIdx % len];
     const next = source[(currentIdx + 1) % len];
+    
     if (commitPending && commitBoardRef.current) {
       const b = commitBoardRef.current;
       return [
@@ -71,6 +72,14 @@ export default function BoardPager({ boards, transitionMode = 'blank', tableName
           onAdvance={onAdvance}
           autoAdvance={false}
           boardId={board.key}
+          onMarkViewed={(bid) => {
+            try {
+              const numericId = typeof board.id === 'number' ? board.id : (Number(bid) || null);
+              if (tableName && numericId != null) {
+                setLatestPuzzleId(tableName, numericId);
+              }
+            } catch {}
+          }}
         />
       </View>
     );
@@ -93,6 +102,7 @@ export default function BoardPager({ boards, transitionMode = 'blank', tableName
     // Prepare commit so both pages show the same board (the one user just saw)
     const len = source.length;
     const nextBoard = source[(currentIdx + 1) % len];
+    
     commitBoardRef.current = nextBoard;
     setCommitPending(true);
     // Now jump back to page 0 without animation; content remains the same during the jump

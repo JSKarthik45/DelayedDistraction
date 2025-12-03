@@ -60,6 +60,7 @@ export default function BoardPanel({
   onAdvance,
   autoAdvance = false,
   boardId,
+  onMarkViewed,
 }) {
   const [liked, setLiked] = useState(initialLiked);
   const [shared, setShared] = useState(initialShared);
@@ -184,6 +185,7 @@ export default function BoardPanel({
         setSolved(true);
         // Increment today's solved puzzle counter for streak tracking
         incrementTodayPuzzleCount();
+        try { if (onMarkViewed && boardId != null) onMarkViewed(boardId); } catch {}
       }
       setBannerVariant('correct');
       setBannerText('Correct');

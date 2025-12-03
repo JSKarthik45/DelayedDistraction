@@ -12,19 +12,30 @@ const styleFactory = (colors) => StyleSheet.create({
 export default function HomeScreen({ mode = 'Trending' }) {
   const colors = useThemeColors();
   const styles = useThemedStyles(styleFactory);
-  const TRENDINGBOARDS = trendingPuzzles;
-  const PRACTICEBOARDS = practicePuzzles;
+  const [trendData, setTrendData] = React.useState(() => [...trendingPuzzles]);
+  const [practiceData, setPracticeData] = React.useState(() => [...practicePuzzles]);
+
   React.useEffect(() => {
-    refreshPuzzles();
+    let mounted = true;
+    (async () => {
+      try {
+        await refreshPuzzles();
+        if (!mounted) return;
+        // Copy arrays to change reference and trigger downstream re-render
+        setTrendData([...trendingPuzzles]);
+        setPracticeData([...practicePuzzles]);
+      } catch {}
+    })();
+    return () => { mounted = false; };
   }, []);
 
   return (
     <View style={styles.container}>
       {mode === 'Trending' ? (
-        <BoardPager boards={TRENDINGBOARDS} transitionMode="preload" tableName="TrendingPuzzles" />
+        <BoardPager boards={trendData} transitionMode="preload" tableName="TrendingPuzzles" />
       ) : (
         // Add other mode components here
-        <BoardPager boards={PRACTICEBOARDS} transitionMode="preload" tableName="PracticePuzzles" />
+        <BoardPager boards={practiceData} transitionMode="preload" tableName="PracticePuzzles" />
       )}
     </View>
   );
