@@ -29,14 +29,7 @@
       }
     },
     "plugins": [
-      "expo-secure-store",
-      [
-        "expo-notifications",
-        {
-          "mode": "default",
-          "color": "#739552"
-        }
-      ]
+      "expo-secure-store"
     ]
   }
 }

@@ -9,7 +9,6 @@ import { lightNavigationTheme, darkNavigationTheme } from './src/theme';
 import { loadPreferences } from './src/storage/preferences';
 import { setThemePrimarySecondary } from './src/theme/colors';
 import { ThemeProvider, useThemeColors, useThemeController } from './src/theme/ThemeContext';
-import NoScrollNotifier from './src/components/NoScrollNotifier';
 import ThickSpinner from './src/components/ThickSpinner';
 import AnimatedSplash from './src/components/AnimatedSplash';
 
@@ -102,7 +101,6 @@ export default function App() {
     <OnboardingContext.Provider value={{ completeOnboarding }}>
       <ThemeProvider initialTheme={initialTheme}>
         <ThemedNav />
-        <NoScrollNotifier />
       </ThemeProvider>
     </OnboardingContext.Provider>
   );
