@@ -9,6 +9,7 @@ import { lightNavigationTheme, darkNavigationTheme } from './src/theme';
 import { loadPreferences } from './src/storage/preferences';
 import { setThemePrimarySecondary } from './src/theme/colors';
 import { ThemeProvider, useThemeColors, useThemeController } from './src/theme/ThemeContext';
+import NoScrollNotifier from './src/components/NoScrollNotifier';
 import ThickSpinner from './src/components/ThickSpinner';
 import AnimatedSplash from './src/components/AnimatedSplash';
 
@@ -16,7 +17,7 @@ import getPuzzlesData from './src/services/getData';
 
 // Toggle to force showing onboarding in development
 // Set to true during development to always see onboarding
-const SHOW_ONBOARDING_ALWAYS = false;
+const SHOW_ONBOARDING_ALWAYS = true;
 
 const ONBOARDING_KEY = 'hasOnboarded';
 
@@ -101,6 +102,7 @@ export default function App() {
     <OnboardingContext.Provider value={{ completeOnboarding }}>
       <ThemeProvider initialTheme={initialTheme}>
         <ThemedNav />
+        <NoScrollNotifier />
       </ThemeProvider>
     </OnboardingContext.Provider>
   );

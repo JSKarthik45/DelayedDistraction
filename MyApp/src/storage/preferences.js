@@ -3,6 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const KEYS = {
   blockedApps: 'dd_blocked_apps',
   problemTarget: 'dd_problem_target',
+  scrollFromTime: 'dd_scroll_from_time',
+  scrollToTime: 'dd_scroll_to_time',
   themePrimary: 'dd_theme_primary',
   themeSecondary: 'dd_theme_secondary',
   themeKey: 'dd_theme_key',
@@ -77,9 +79,11 @@ export async function getPuzzleCounts() {
 
 export async function loadPreferences() {
   try {
-    const [blockedStr, targetStr, primary, secondary, themeKey, chessUsername, chessRating] = await Promise.all([
+    const [blockedStr, targetStr, fromTime, toTime, primary, secondary, themeKey, chessUsername, chessRating] = await Promise.all([
       AsyncStorage.getItem(KEYS.blockedApps),
       AsyncStorage.getItem(KEYS.problemTarget),
+      AsyncStorage.getItem(KEYS.scrollFromTime),
+      AsyncStorage.getItem(KEYS.scrollToTime),
       AsyncStorage.getItem(KEYS.themePrimary),
       AsyncStorage.getItem(KEYS.themeSecondary),
       AsyncStorage.getItem(KEYS.themeKey),
@@ -89,18 +93,23 @@ export async function loadPreferences() {
     const blocked = blockedStr ? JSON.parse(blockedStr) : {};
     const problemTarget = targetStr ? Number(targetStr) : 5;
     const theme = (primary && secondary) ? { key: themeKey || 'classic', primary, secondary } : null;
-    return { blocked, problemTarget, theme, chessUsername: chessUsername || '', chessTacticsRating: chessRating ? Number(chessRating) : null };
+    return { blocked, problemTarget, fromTime: fromTime || '', toTime: toTime || '', theme, chessUsername: chessUsername || '', chessTacticsRating: chessRating ? Number(chessRating) : null };
   } catch (e) {
-    return { blocked: {}, problemTarget: 5, theme: null, chessUsername: '', chessTacticsRating: null };
+    return { blocked: {}, problemTarget: 5, fromTime: '', toTime: '', theme: null, chessUsername: '', chessTacticsRating: null };
   }
 }
 
-export async function savePreferences({ blocked, problemTarget, theme }) {
+export async function savePreferences({ problemTarget, fromTime, toTime, theme }) {
   try {
     const tasks = [
-      AsyncStorage.setItem(KEYS.blockedApps, JSON.stringify(blocked || {})),
       AsyncStorage.setItem(KEYS.problemTarget, String(problemTarget ?? 5)),
     ];
+    if (typeof fromTime === 'string') {
+      tasks.push(AsyncStorage.setItem(KEYS.scrollFromTime, fromTime));
+    }
+    if (typeof toTime === 'string') {
+      tasks.push(AsyncStorage.setItem(KEYS.scrollToTime, toTime));
+    }
     if (theme && theme.primary && theme.secondary) {
       tasks.push(AsyncStorage.setItem(KEYS.themePrimary, theme.primary));
       tasks.push(AsyncStorage.setItem(KEYS.themeSecondary, theme.secondary));

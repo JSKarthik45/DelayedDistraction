@@ -1,18 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Switch, FlatList, Pressable, TextInput, ScrollView, Linking } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, Linking, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemedStyles, useThemeColors } from '../../theme/ThemeContext';
 import { loadPreferences, savePreferences, setTheme, setChessUsername as saveChessUsername, setChessTacticsRating, clearChessImport } from '../../storage/preferences';
 import { useThemeController } from '../../theme/ThemeContext';
 
-const SOCIAL_APPS = [
-  { key: 'instagram', label: 'Instagram', icon: 'logo-instagram' },
-  { key: 'facebook', label: 'Facebook', icon: 'logo-facebook' },
-  { key: 'twitter', label: 'Twitter / X', icon: 'logo-twitter' },
-  { key: 'tiktok', label: 'TikTok', icon: 'logo-tiktok' },
-  { key: 'youtube', label: 'YouTube', icon: 'logo-youtube' },
-  { key: 'snapchat', label: 'Snapchat', icon: 'logo-snapchat' },
-];
+// No app toggles; replaced by time window selection UI
 
 const styleFactory = (colors) => StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
@@ -50,33 +43,40 @@ const styleFactory = (colors) => StyleSheet.create({
     padding: 12,
     backgroundColor: colors.surface,
   },
-  cardLabel: { marginBottom: 6, color: colors.text, fontWeight: '600' },
+  cardLabel: { fontSize: 14, fontWeight: '600', marginBottom: 6, color: colors.text },
+  primaryBtn: {
+    marginTop: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 8,
+    backgroundColor: colors.primary,
+  },
   input: {
+    color: colors.text,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     borderRadius: 8,
-    paddingHorizontal: 10,
     paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  primaryBtnText: {
     color: colors.text,
-    marginBottom: 12,
+    fontWeight: '700',
   },
-  primaryBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  primaryBtnText: { color: colors.text, fontWeight: '700' },
-  linkList: { marginTop: 4 },
-  linkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  timePill: {
+    width: '48%',
     paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
+    backgroundColor: colors.primary,
   },
+  timePillLabel: { color: colors.secondary, marginBottom: 4 },
+  timePillValue: { color: colors.text, fontWeight: '700', fontSize: 16 },
   linkLabel: { marginLeft: 12, fontSize: 16, color: colors.text, flex: 1 },
   linkIconRight: { marginLeft: 8 },
+  linkRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   themeRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   themeOption: {
     flexDirection: 'row',
@@ -100,6 +100,8 @@ const styleFactory = (colors) => StyleSheet.create({
 export default function SettingsScreen() {
   const [blocked, setBlocked] = useState({});
   const [problemTarget, setProblemTarget] = useState(5);
+  const [fromTime, setFromTime] = useState(''); // 'HH:mm' 24h
+  const [toTime, setToTime] = useState('');
   const [chessUsername, setChessUsername] = useState('');
   const [themeKey, setThemeKey] = useState('classic');
   const [tacticsRating, setTacticsRating] = useState(null);
@@ -112,8 +114,10 @@ export default function SettingsScreen() {
   useEffect(() => {
     (async () => {
       const pref = await loadPreferences();
-      setBlocked(pref.blocked || {});
+      setBlocked(pref.blocked || {}); // legacy
       setProblemTarget(pref.problemTarget ?? 5);
+      if (pref.fromTime) setFromTime(pref.fromTime);
+      if (pref.toTime) setToTime(pref.toTime);
       if (pref.theme) {
         setThemeKey(pref.theme.key || 'classic');
       }
@@ -138,11 +142,7 @@ export default function SettingsScreen() {
   };
 
   const toggleApp = (key) => {
-    setBlocked(prev => {
-      const next = { ...prev, [key]: !prev[key] };
-      savePreferences({ blocked: next, problemTarget });
-      return next;
-    });
+    // removed app toggles; retained for backward compatibility
   };
 
   const renderItem = ({ item }) => {
@@ -166,40 +166,91 @@ export default function SettingsScreen() {
   const themeOptions = [
     { key: 'classic', label: 'Green', primary: '#739552', secondary: '#ebecd0' },
     { key: 'warm', label: 'Brown', primary: '#b88762', secondary: '#edd6b0' },
-    { key: 'blue', label: 'Blue', primary: '#4b7399', secondary: '#eff5faff' },
-    { key: 'rose', label: 'Pink', primary: '#ec94a4', secondary: '#f3dde2ff' },
+    { key: 'blue', label: 'Blue', primary: '#4b7399', secondary: '#d6e9f8ff' },
+    { key: 'rose', label: 'Pink', primary: '#eca3b0ff', secondary: '#f8d4ddff' },
   ];
 
   const applyTheme = (opt) => {
     setThemeKey(opt.key);
     themeController.applyTheme(opt);
     setTheme({ key: opt.key, primary: opt.primary, secondary: opt.secondary });
-    savePreferences({ blocked, problemTarget, theme: { key: opt.key, primary: opt.primary, secondary: opt.secondary } });
+    savePreferences({ problemTarget, theme: { key: opt.key, primary: opt.primary, secondary: opt.secondary } });
+  };
+
+  // --- Time window UI helpers ---
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [pickerTarget, setPickerTarget] = useState('from'); // 'from' | 'to'
+  const [tmpHour, setTmpHour] = useState(9);
+  const [tmpMinute, setTmpMinute] = useState(0);
+  const [tmpAmPm, setTmpAmPm] = useState('AM');
+
+  const formatTime = (hhmm) => {
+    if (!hhmm) return 'Set time';
+    const [h, m] = hhmm.split(':').map(n => Number(n));
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    const mm = String(m).padStart(2, '0');
+    return `${h12}:${mm} ${ampm}`;
+  };
+
+  const openPicker = (target) => {
+    setPickerTarget(target);
+    const src = target === 'from' ? fromTime : toTime;
+    const now = new Date();
+    let h = now.getHours();
+    let m = now.getMinutes() - (now.getMinutes() % 15);
+    if (src) {
+      const [sh, sm] = src.split(':').map(Number);
+      if (Number.isFinite(sh)) h = sh;
+      if (Number.isFinite(sm)) m = sm;
+    }
+    setTmpHour(((h % 12) || 12));
+    setTmpMinute(m);
+    setTmpAmPm(h >= 12 ? 'PM' : 'AM');
+    setPickerVisible(true);
+  };
+
+  const commitPicker = () => {
+    const h24 = (tmpHour % 12) + (tmpAmPm === 'PM' ? 12 : 0);
+    const mm = String(tmpMinute).padStart(2, '0');
+    const value = `${String(h24).padStart(2, '0')}:${mm}`;
+    if (pickerTarget === 'from') setFromTime(value);
+    else setToTime(value);
+    savePreferences({ problemTarget, fromTime: pickerTarget === 'from' ? value : fromTime, toTime: pickerTarget === 'to' ? value : toTime });
+    setPickerVisible(false);
   };
 
   return (
+    <>
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-      <Text style={styles.sectionTitle}>Select social media apps to block</Text>
-      <FlatList
-        data={SOCIAL_APPS}
-        keyExtractor={(item) => item.key}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
-        scrollEnabled={false}
-      />
+      <Text style={styles.sectionTitle}>When do you end up scrolling the most?</Text>
+      <View style={styles.card}>
+        <Text style={styles.cardLabel}>No-scroll window</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          <Pressable onPress={() => openPicker('from')} style={[styles.timePill]}>
+            <Text style={styles.timePillLabel}>From</Text>
+            <Text style={styles.timePillValue}>{formatTime(fromTime)}</Text>
+          </Pressable>
+          <Pressable onPress={() => openPicker('to')} style={[styles.timePill]}>
+            <Text style={styles.timePillLabel}>To</Text>
+            <Text style={styles.timePillValue}>{formatTime(toTime)}</Text>
+          </Pressable>
+        </View>
+        <Text style={[styles.helperText, { marginTop: 8 }]}>We’ll nudge you to finish puzzles during this window.</Text>
+      </View>
 
-      <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Select number of problems to solve</Text>
+      <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Daily puzzle goal</Text>
       <View style={styles.pillRow}>
         {[1, 3, 5, 10, 20].map(n => {
           const active = problemTarget === n;
           return (
-            <Pressable key={n} onPress={() => { setProblemTarget(n); savePreferences({ blocked, problemTarget: n }); }} style={[styles.pill, active && styles.pillActive]}>
+            <Pressable key={n} onPress={() => { setProblemTarget(n); savePreferences({ problemTarget: n }); }} style={[styles.pill, active && styles.pillActive]}>
               <Text style={[styles.pillText, active && styles.pillTextActive]}>{n}</Text>
             </Pressable>
           );
         })}
       </View>
-      <Text style={styles.helperText}>You must solve {problemTarget} problem(s) to unblock selected apps.</Text>
+      <Text style={styles.helperText}>If you haven’t hit your {problemTarget}-puzzle goal by no‑scroll time, we’ll nudge you to finish instead of scrolling.</Text>
 
       <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Tactics Rating from Chess.com</Text>
       <View style={styles.card}>
@@ -263,7 +314,81 @@ export default function SettingsScreen() {
       </View>
 
     </ScrollView>
+    {/* Time picker modal */}
+    <Modal
+      visible={pickerVisible}
+      transparent
+      animationType="fade"
+      onRequestClose={() => setPickerVisible(false)}
+    >
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: '86%', borderRadius: 16, backgroundColor: colors.surface, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border }}>
+          <Text style={{ color: colors.text, fontWeight: '800', fontSize: 16, marginBottom: 8 }}>Select time</Text>
+          {/* Top: two big rectangles for Hour and Minute */}
+          <View style={{ flexDirection:'row', justifyContent:'space-between', marginBottom:8 }}>
+            <Pressable onPress={() => { /* optional: cycle hour */ }} style={{ flex:1, marginRight:8, height:64, borderRadius:12, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, backgroundColor: colors.surface, alignItems:'center', justifyContent:'center' }}>
+              <Text style={{ color: colors.text, fontSize:28, fontWeight:'800' }}>{tmpHour}</Text>
+            </Pressable>
+            <View style={{ width:24, alignItems:'center', justifyContent:'center' }}>
+              <Text style={{ color: colors.text, fontSize:24, fontWeight:'800' }}>:</Text>
+            </View>
+            <Pressable onPress={() => { /* optional: cycle minute */ }} style={{ flex:1, marginLeft:8, height:64, borderRadius:12, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, backgroundColor: colors.surface, alignItems:'center', justifyContent:'center' }}>
+              <Text style={{ color: colors.text, fontSize:28, fontWeight:'800' }}>{String(tmpMinute).padStart(2,'0')}</Text>
+            </Pressable>
+          </View>
+          {/* Bottom: smaller AM/PM rectangles */}
+          <View style={{ flexDirection:'row', justifyContent:'center', marginBottom:10 }}>
+            {['AM','PM'].map(v => (
+              <Pressable key={v} onPress={() => setTmpAmPm(v)} style={{ paddingVertical:8, paddingHorizontal:18, marginHorizontal:6, borderRadius:10, backgroundColor: tmpAmPm===v? colors.primary: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border }}>
+                <Text style={{ color: tmpAmPm===v? '#fff': colors.text, fontWeight:'700' }}>{v}</Text>
+              </Pressable>
+            ))}
+          </View>
+          {/* Selection chips below for hour and minute */}
+          <Text style={{ color: colors.muted, marginBottom:6 }}>Hour</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 6 }}>
+            {[1,2,3,4,5,6,7,8,9,10,11,12].map(h => (
+              <Pressable key={h} onPress={() => setTmpHour(h)} style={{ paddingVertical: 10, paddingHorizontal: 12, marginRight: 8, borderRadius: 10, backgroundColor: tmpHour===h? colors.primary: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border }}>
+                <Text style={{ color: tmpHour===h? '#fff': colors.text, fontWeight: '700' }}>{h}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+          <Text style={{ color: colors.muted, marginBottom:6 }}>Minute</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 6 }}>
+            {[0,15,30,45].map(m => (
+              <Pressable key={m} onPress={() => setTmpMinute(m)} style={{ paddingVertical: 10, paddingHorizontal: 12, marginRight: 8, borderRadius: 10, backgroundColor: tmpMinute===m? colors.primary: colors.surface, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border }}>
+                <Text style={{ color: tmpMinute===m? '#fff': colors.text, fontWeight: '700' }}>{String(m).padStart(2,'0')}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 }}>
+            <Pressable onPress={() => setPickerVisible(false)} style={{ paddingVertical: 10, paddingHorizontal: 14, marginRight: 8 }}>
+              <Text style={{ color: colors.muted, fontWeight: '600' }}>Cancel</Text>
+            </Pressable>
+            <Pressable onPress={commitPicker} style={{ paddingVertical: 10, paddingHorizontal: 14, backgroundColor: colors.primary, borderRadius: 10 }}>
+              <Text style={{ color: '#fff', fontWeight: '800' }}>Save</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+    </>
   );
 }
 
 // Removed outdated static styles block; dynamic styles generated via styleFactory + useThemedStyles.
+
+// Extra styles for time pills and picker
+const extra = (colors) => ({
+  timePill: {
+    width: '48%',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  timePillLabel: { color: colors.muted, marginBottom: 4 },
+  timePillValue: { color: colors.text, fontWeight: '700', fontSize: 16 },
+});
